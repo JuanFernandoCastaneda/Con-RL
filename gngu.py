@@ -1,16 +1,17 @@
 import numpy as np
 
 class GNGU:
-    def __init__(self, input_dim, num_nodes, max_age, winner_adaptation, neighbour_adaptation):
+    def __init__(self, input_dim, num_nodes, max_age, utility_factor, winner_adaptation, neighbour_adaptation):
         self.input_dim = input_dim
         self.max_age = max_age
+        self.utility_factor = utility_factor
         self.winner_adaptation = winner_adaptation
         self.neighbour_adaptation = neighbour_adaptation
         # self.nodes = np.random.rand(num_nodes, input_dim)
-        self.nodes = np.zeros((num_nodes, input_dim))
-        self.errors = np.zeros((num_nodes, input_dim))
-        self.utilities = np.ones((num_nodes, input_dim))
-        self.ages = np.full((num_nodes, num_nodes), -1)
+        self.nodes = np.full((num_nodes, input_dim), 0.0)
+        self.errors = np.full(num_nodes, 0.0)
+        self.utilities = np.full(num_nodes, 1.0)
+        self.ages = np.full((num_nodes, num_nodes), 0)
 
     # signal is not discretized.
     def fit(self, signal):
@@ -34,10 +35,10 @@ class GNGU:
         # Update error and utility of winner. Never going to drop error because
         # nodes len always gonna be greater or equal than 2.
         self.errors[first_winner] = self.errors[first_winner] \
-            + np.power((self.nodes[first_winner] - signal), 2)
+            + np.power(np.linalg.norm(self.nodes[first_winner] - signal), 2)
         self.utilities[first_winner] = self.utilities[first_winner] \
-            + np.power(self.nodes[second_winner] - signal, 2) \
-               - np.power(self.nodes[first_winner] - signal, 2)
+            + np.power(np.linalg.norm(self.nodes[second_winner] - signal), 2) \
+               - np.power(np.linalg.norm(self.nodes[first_winner] - signal), 2)
 
         # --------------- ADAPT -------------------
 
@@ -61,14 +62,25 @@ class GNGU:
                 self.ages[i, j] = -1
                 self.ages[j, i] = -1
 
-        # Falta remover los nodos viejos.
-        '''
-        for node in np.ages:
-            # If all my ages are -1.
-            if np.sum(node) == -len(node):
-                np.remove(np.nodes, node)
-        '''
+        # Remove non-connected nodes.
+        for node_index in range(len(self.ages)):
+            # If all my connections are non existant (-1).
+            if np.sum(self.ages[node_index]) == -len(self.ages[node_index]):
+                self.remove_node_and_edges(node_index)
+
+        m = np.argmin(self.utilities)
+        u = np.argmax(self.errors)
+        
+        if self.errors[u]/self.utilities[m] > self.utility_factor:
+            self.remove_node_and_edges(m)
 
         # Decrease error values of winning nodes and their neighbors
         for i in np.concatenate((winner_indices, np.where(self.ages[winner_indices, :] == 1)[1])):
             self.errors[i] += distances[i] ** 2
+    
+    def remove_node_and_edges(self, node_index):
+            self.nodes = np.delete(self.nodes, node_index, 0)
+            self.errors = np.delete(self.errors, node_index, 0)
+            self.utilities = np.delete(self.utilities, node_index, 0)
+            # Delete both column and row.
+            self.ages = np.delete(np.delete(self.ages, node_index, 0), node_index, 1)
