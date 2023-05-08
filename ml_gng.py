@@ -9,4 +9,4 @@ class MLGNG:
         self.layers[action].fit(signal)
 
     def get_policy(action):
-        return policy
+        return action
