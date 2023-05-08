@@ -1,10 +1,11 @@
 import numpy as np
 
 class GNGU:
-    def __init__(self, input_dim, num_nodes, max_age, insertion_parameter, utility_factor, winner_adaptation, neighbour_adaptation):
+    def __init__(self, input_dim, num_nodes, max_age, node_creation_error, insertion_parameter, utility_factor, winner_adaptation, neighbour_adaptation):
         self.signal_count = 0
         self.input_dim = input_dim
         self.max_age = max_age
+        self.node_creation_error = node_creation_error
         self.insertion_parameter = insertion_parameter
         self.utility_factor = utility_factor
         self.winner_adaptation = winner_adaptation
@@ -83,16 +84,29 @@ class GNGU:
             for node in len(range(self.ages)):
                 if node != u and self.ages[u][node] >= 0 and self.errors[node] > self.errors[f]:
                     f = node
-            new_node = 0.5*(self.nodes[u]+self.nodes[f])
-
-
-
+            new_w = 0.5*(self.nodes[u]+self.nodes[f])
+            r = len(self.ages)
+            self.add_node(new_w)
+            self.ages[r][u], self.ages[u][r] = 0, 0
+            self.ages[r][f] = 0
+            self.ages[f][r] = 0
+            self.ages[u][f] = -1
+            self.ages[f][u] = -1
+            self.errors[u] = self.node_creation_error * self.errors[u]
+            self.errors[f] = self.node_creation_error * self.errors[f]
+            
         # Decrease error values of winning nodes and their neighbors
         for i in np.concatenate((winner_indices, np.where(self.ages[winner_indices, :] == 1)[1])):
             self.errors[i] += distances[i] ** 2
 
     def add_node(self, new_w):
         self.nodes = np.append(self.nodes, new_w)
+        self.errors = np.append(self.errors, 0)
+        self.utilities = np.append(self.utilities, 1)
+        for node_index in range(len(np.ages)):
+            self.ages[node_index] = np.append(self.ages[node_index], -1)
+        self.ages = np.append(self.ages, [-1 for _ in len(self.ages)])
+        
     
     def remove_node_and_edges(self, node_index):
         self.nodes = np.delete(self.nodes, node_index, 0)
