@@ -1,5 +1,4 @@
 import gym
-from gngu import GNGU
 from ml_gng import MLGNG
 from qlearning import  OffPolicyControl
 import numpy as np
@@ -14,7 +13,8 @@ state = q_learning.get_discrete_state(state)
 action = q_learning.action_epsilon_greedy(state)
 # State is: [x_position, velocity]
 new_state, reward, done, truncated, info = q_learning.env.step(action)
-for i in range(1):
+for i in range(20):
+    print(i)
     new_state_discre = q_learning.get_discrete_state(new_state)
     p = new_state_discre[0]
     v = new_state_discre[1]
@@ -24,7 +24,7 @@ for i in range(1):
     mlgng.update(action, new_state)
     ## selecion policy
     a_qlearn = q_learning.action_epsilon_greedy(new_state_discre)
-    ##a_gngu =
+    a_gngu = mlgng.get_policy(new_state_discre)
     action_selected = a_qlearn #select_action(a_qlearn,a_gngu)
     state = new_state_discre
     new_state, reward, done, truncated, info = q_learning.env.step(action_selected)

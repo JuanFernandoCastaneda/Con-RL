@@ -26,11 +26,11 @@ class GNGU:
             return
         
         # Else.
-        distances = np.linalg.norm(self.nodes - signal, axis=1)
+        distances = [np.linalg.norm(i - signal) for i in self.nodes]
         winner_indices = np.argsort(distances)[:2]
         first_winner, second_winner = winner_indices
-
         # Increment age of edges connected to winning nodes
+        print("ages igual a nodes", len(self.nodes) == len(self.ages))
         for connection in range(len(self.nodes)):
             if connection != first_winner and self.ages[first_winner][connection] >= 0:
                 self.ages[first_winner][connection] += 1
@@ -50,7 +50,7 @@ class GNGU:
             + self.winner_adaptation * (signal - self.nodes[first_winner])
 
         # Move winning nodes closer to input vector
-        for connection in self.ages[first_winner]:
+        for connection in range(len(self.ages[first_winner])):
             # If age is >= 0 then there exists a connection.
             if connection != first_winner and self.ages[first_winner][connection] >= 0:
                 self.nodes[connection] = self.nodes[connection]\
@@ -65,13 +65,11 @@ class GNGU:
             if age >= self.max_age: 
                 self.ages[i, j] = -1
                 self.ages[j, i] = -1
-
         # Remove non-connected nodes.
         for node_index in range(len(self.ages)):
             # If all my connections are non existant (-1).
             if np.sum(self.ages[node_index]) == -len(self.ages[node_index]):
                 self.remove_node_and_edges(node_index)
-
         # Check lowest utility node.
         m = np.argmin(self.utilities)
         u = np.argmax(self.errors)
@@ -81,7 +79,7 @@ class GNGU:
         # Check if its multiple of insertion parameter lambda.
         if self.signal_count/self.insertion_parameter == self.signal_count//self.insertion_parameter:
             f = 0
-            for node in len(range(self.ages)):
+            for node in range(len(self.ages)):
                 if node != u and self.ages[u][node] >= 0 and self.errors[node] > self.errors[f]:
                     f = node
             new_w = 0.5*(self.nodes[u]+self.nodes[f])
@@ -100,13 +98,20 @@ class GNGU:
             self.errors[i] += distances[i] ** 2
 
     def add_node(self, new_w):
-        self.nodes = np.append(self.nodes, new_w)
+        print("before", self.nodes.shape, self.errors.shape, self.utilities.shape, self.ages.shape)
+        new_nodes = np.full((len(self.nodes)+1, 2), 0)
+        for i in range(len(self.nodes)):
+            new_nodes[i] = self.nodes[i]
+        new_nodes[len(self.nodes)] = new_w
+        self.nodes = new_nodes
         self.errors = np.append(self.errors, 0)
         self.utilities = np.append(self.utilities, 1)
-        for node_index in range(len(np.ages)):
-            self.ages[node_index] = np.append(self.ages[node_index], -1)
-        self.ages = np.append(self.ages, [-1 for _ in len(self.ages)])
-        
+        new_ages = np.full((len(self.ages)+1, len(self.ages)+1), 0)
+        for i in range(len(self.ages)):
+            for j in range(len(self.ages)):
+                new_ages[i][j] = self.ages[i][j]
+        self.ages = new_ages
+        print("after", self.nodes.shape, self.errors.shape, self.utilities.shape, self.ages.shape)
     
     def remove_node_and_edges(self, node_index):
         self.nodes = np.delete(self.nodes, node_index, 0)
